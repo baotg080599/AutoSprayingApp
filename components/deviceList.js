@@ -21,8 +21,8 @@ const DeviceList = () => {
     <View style={styles.container}>
       <FlatList
         data={[
-          {key: 'device 1'},
-          {key: 'device 2'},
+          {key: 'channel 1'},
+          {key: 'channel 2'},
         ]}
         renderItem={({item}) => 
         (

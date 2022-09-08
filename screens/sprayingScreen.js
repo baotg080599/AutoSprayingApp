@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, StyleSheet, Text, Pressable, View } from "react-native";
+import { Modal, StyleSheet, Text, Pressable, View, TextInput } from "react-native";
 import ScrollPicker from 'react-native-wheel-scrollview-picker';
 import { HStack, VStack } from '@react-native-material/core';
 
@@ -103,6 +103,14 @@ const SprayingScreen = () => {
           onPress={() => setmodalDistanceVisible(true)}
         >
           <Text style={{...styles.textStyle,fontSize:50}}>{DistanceText}</Text>
+        </Pressable>
+        </HStack>
+        <HStack justify='center'>
+        <Pressable
+          style={{...styles.button, borderRadius:12,...styles.buttonOpen}}
+          onPress={() => setmodalDistanceVisible(true)}
+        >
+          <Text style={{...styles.textStyle,fontSize:32}}>Next</Text>
         </Pressable>
         </HStack>
         </VStack>
