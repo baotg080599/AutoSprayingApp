@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, StyleSheet, Text, Pressable, View, TextInput } from "react-native";
 import ScrollPicker from 'react-native-wheel-scrollview-picker';
 import { HStack, VStack } from '@react-native-material/core';
@@ -71,15 +71,87 @@ const ModalPicker = ({setChange, value, setModalVisible, modalVisible }) => {
   );
 }
 
-const SprayingScreen = () => {  
+const SetUpModal = ({ value, navigation, setModalVisible, modalVisible }) => {
+  const [calTime, setCalTime] = useState(0);
+
+  return(
+    <Modal
+    animationType="slide"
+    transparent={true}
+    visible={modalVisible}
+    onRequestClose={() => {
+      setModalVisible(!modalVisible);
+    }}
+  >
+    <View style={{
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: 'rgba(52, 52, 52, 0.8)'
+      }}>
+      <View style={{
+          alignItems: "center",
+          flexDirection: 'column',
+          backgroundColor: "white",
+          borderRadius: 25,
+          padding:'10%',
+          shadowColor: "#000",
+          shadowOffset: {
+            width: 0,
+            height: 2
+          },
+          shadowOpacity: 0.25,
+          shadowRadius: 4,
+          elevation: 5
+      }}>
+        
+      <TextInput
+        style={{
+          height: 40,
+          width: 280,
+          margin: 12,
+          borderBottomWidth: 1,
+          padding: 5
+        }}
+        placeholder="name"
+      />
+      <TextInput
+        style={{height: 40,
+          width: 280,
+          margin: 12,
+          borderBottomWidth: 1,
+          padding: 5,}}
+        placeholder="cycle"
+        keyboardType="numeric"
+      />
+      {<Text></Text>}
+      <Pressable
+          style={{...styles.button, borderRadius:12,...styles.buttonOpen, alignSelf:'flex-end'}}
+          onPress={() => {
+            setCalTime(value);
+            setModalVisible(!modalVisible);
+            navigation.navigate('Settings');
+          }}
+        >
+          <Text style={{...styles.textStyle,fontSize:22}}>Finish</Text>
+        </Pressable>
+      </View>
+    </View>
+  </Modal>
+  );
+};
+
+const SprayingScreen = ({ navigation }) => {  
   const [modalSprayingVisible,setModalSprayingVisible] = useState(false);
   const [modalDistanceVisible,setmodalDistanceVisible] = useState(false);
+  const [modalSetupVisible, setModalSetupVisible] = useState(false);
   const [SprayingText,setSprayingText] = useState('00:00:00');
   const [DistanceText,setDistanceText] = useState('00:00:00');
     return (
       <View style={styles.centeredView}>
         <ModalPicker modalVisible={modalSprayingVisible} setModalVisible={setModalSprayingVisible} setChange={setSprayingText} value={SprayingText}/>
         <ModalPicker modalVisible={modalDistanceVisible} setModalVisible={setmodalDistanceVisible} setChange={setDistanceText} value={DistanceText}/>
+        <SetUpModal modalVisible={modalSetupVisible} setModalVisible={setModalSetupVisible} navigation={navigation}/>
         <VStack spacing={'20%'}>
         <HStack spacing={'5%'} style={{
           justifyContent: 'center',
@@ -108,7 +180,7 @@ const SprayingScreen = () => {
         <HStack justify='center'>
         <Pressable
           style={{...styles.button, borderRadius:12,...styles.buttonOpen}}
-          onPress={() => setmodalDistanceVisible(true)}
+          onPress={() => setModalSetupVisible(true)}
         >
           <Text style={{...styles.textStyle,fontSize:32}}>Next</Text>
         </Pressable>
@@ -116,7 +188,7 @@ const SprayingScreen = () => {
         </VStack>
       </View>
     );
-}
+};
 
 const styles = StyleSheet.create({
   centeredView: {

@@ -1,9 +1,10 @@
 import React from 'react';
+import { IconButton } from "@react-native-material/core";
 import { createStackNavigator } from '@react-navigation/stack';
-import { FlatList, StyleSheet, Text, View, TouchableWithoutFeedback } from 'react-native';
+import { FlatList, StyleSheet, Text, View, TouchableWithoutFeedback  } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Icon from "@expo/vector-icons/MaterialCommunityIcons";
 
-
-import CycleScreen from './cycleScreen';
 import SprayingScreen from './sprayingScreen';
 
 const Stack = createStackNavigator();
@@ -23,10 +24,21 @@ const styles = StyleSheet.create({
 });
 
 const List = ({ navigation }) => {
-  return(<View style={styles.container}>
+
+  React.useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <IconButton
+          onPress={() => navigation.navigate('spraying')}
+          icon={(props) => <Icon name='plus' size={30}/>}
+        />
+      )
+    });
+  }, [navigation]);
+  return(
+  <View style={styles.container}>
     <FlatList
       data={[
-        {key: 'cycle'},
         {key: 'spraying'},
       ]}
       renderItem={({item}) => 
@@ -51,12 +63,9 @@ const SettingScreen = () => {
         component={List}
       />
       <Stack.Screen
-        name="cycle"
-        component={CycleScreen}
-      />
-      <Stack.Screen
         name="spraying"
         component={SprayingScreen}
+
       />
     </Stack.Navigator>
   );
