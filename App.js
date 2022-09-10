@@ -2,12 +2,7 @@ import React, { useState, useRef }  from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import {
-  Backdrop,
-  BackdropSubheader,
-  AppBar,
-  IconButton,
-} from "@react-native-material/core";
+import { View } from 'react-native';
 
 import HomeScreen from './screens/homeScreen';
 import SettingsScreen from './screens/settingScreen';

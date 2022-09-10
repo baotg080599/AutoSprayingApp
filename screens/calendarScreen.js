@@ -3,12 +3,13 @@ import { StyleSheet, View, Text, Button, Platform } from 'react-native';
 import {Agenda, Calendar} from 'react-native-calendars';
 
 const CalendarScreen = () => {
+  var currentdate = new Date();
+
   return(
       <Calendar
   // Initially visible month. Default = now
-  initialDate={'2012-03-01'}
   // Minimum date that can be selected, dates before minDate will be grayed out. Default = undefined
-  minDate={'2012-05-10'}
+  minDate={currentdate.getFullYear()+'-'+currentdate.getMonth()+'-'+currentdate.getDate()}
   // Maximum date that can be selected, dates after maxDate will be grayed out. Default = undefined
   maxDate={'2012-05-30'}
   // Handler which gets executed on day press. Default = undefined

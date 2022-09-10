@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, StyleSheet, Text, Pressable, View, TextInput } from "react-native";
 import ScrollPicker from 'react-native-wheel-scrollview-picker';
 import { HStack, VStack } from '@react-native-material/core';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ModalPicker = ({setChange, value, setModalVisible, modalVisible }) => {
 
@@ -72,7 +73,20 @@ const ModalPicker = ({setChange, value, setModalVisible, modalVisible }) => {
 }
 
 const SetUpModal = ({ value, navigation, setModalVisible, modalVisible }) => {
-  const [calTime, setCalTime] = useState(0);
+  const [nameValue, setNameValue] = useState('');
+  const [cycleValue, setCycleValue] = useState(0);
+
+  var currentdate = new Date(); 
+
+  const setSpraying = async (value) => {
+    try {
+      const jsonValue = JSON.stringify(value);
+      await AsyncStorage.setItem(currentdate.toString(), jsonValue);
+    } catch(e) {
+      // save error
+      console.log(e);
+    }
+  }
 
   return(
     <Modal
@@ -113,6 +127,8 @@ const SetUpModal = ({ value, navigation, setModalVisible, modalVisible }) => {
           borderBottomWidth: 1,
           padding: 5
         }}
+        onChangeText={newText => setNameValue(newText)}
+        defaultValue={nameValue}
         placeholder="name"
       />
       <TextInput
@@ -121,6 +137,8 @@ const SetUpModal = ({ value, navigation, setModalVisible, modalVisible }) => {
           margin: 12,
           borderBottomWidth: 1,
           padding: 5,}}
+        onChangeText={newText => setCycleValue(newText)}
+        defaultValue={cycleValue}
         placeholder="cycle"
         keyboardType="numeric"
       />
@@ -128,7 +146,12 @@ const SetUpModal = ({ value, navigation, setModalVisible, modalVisible }) => {
       <Pressable
           style={{...styles.button, borderRadius:12,...styles.buttonOpen, alignSelf:'flex-end'}}
           onPress={() => {
-            setCalTime(value);
+            setSpraying({
+              name: nameValue,
+              sprayingTime: value.spraying,
+              distanceTime: value.distance,
+              cycle: cycleValue
+            });
             setModalVisible(!modalVisible);
             navigation.navigate('Settings');
           }}
@@ -151,7 +174,7 @@ const SprayingScreen = ({ navigation }) => {
       <View style={styles.centeredView}>
         <ModalPicker modalVisible={modalSprayingVisible} setModalVisible={setModalSprayingVisible} setChange={setSprayingText} value={SprayingText}/>
         <ModalPicker modalVisible={modalDistanceVisible} setModalVisible={setmodalDistanceVisible} setChange={setDistanceText} value={DistanceText}/>
-        <SetUpModal modalVisible={modalSetupVisible} setModalVisible={setModalSetupVisible} navigation={navigation}/>
+        <SetUpModal value={{spraying:SprayingText,distance:DistanceText}} modalVisible={modalSetupVisible} setModalVisible={setModalSetupVisible} navigation={navigation}/>
         <VStack spacing={'20%'}>
         <HStack spacing={'5%'} style={{
           justifyContent: 'center',
