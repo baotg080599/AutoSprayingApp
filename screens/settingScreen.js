@@ -4,6 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { FlatList, StyleSheet, Text, View, TouchableWithoutFeedback  } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from "@expo/vector-icons/MaterialCommunityIcons";
+import Swipeable from 'react-native-gesture-handler/Swipeable';
 
 import SprayingScreen from './sprayingScreen';
 
@@ -25,7 +26,7 @@ const styles = StyleSheet.create({
 
 const List = ({ navigation }) => {
 
-  const [listSpraying,setListSpraying] = useState([{element:0}]);
+  const [listSpraying,setListSpraying] = useState([]);
 
   const getItemObject = async (keyObject) => {
     try {
@@ -36,27 +37,31 @@ const List = ({ navigation }) => {
     }
   };
 
- getAllKeys = async () => {
+ const getAllKeys = async () => {
     let list = [];
     let keys = [];
     try {
       keys = await AsyncStorage.getAllKeys();
       keys.forEach(async element => {
-        list.push(await getItemObject(element));
+        let item = await getItemObject(element);
+        list.push({...item,key: element});
+        setListSpraying(list);
       });
-      if(listSpraying[0].element == 0){
-      setListSpraying(list);}
     } catch(e) {
       // read key error
     }
   };
 
   React.useEffect(() => {
+    const load = async () =>{
+      return await getAllKeys();
+    }
+    load();
     navigation.setOptions({
       headerRight: () => (
         <IconButton
-          onPress={() => navigation.navigate('spraying')}
-          icon={(props) => <Icon name='plus' size={30}/>}
+          onPress={async () => await getAllKeys()}
+          icon={(props) => <Icon name='reload' size={30}/>}
         />
       )
     });
@@ -64,12 +69,14 @@ const List = ({ navigation }) => {
   
   return(
   <View style={styles.container}>
-    {listSpraying.length == 0 && <Text>no things</Text>}
+    {listSpraying.length === 0 && <Text style={{alignSelf:'center'}}>add spraying way</Text>}
     {listSpraying.length > 0 &&
     <FlatList
       data={listSpraying}
       renderItem={({item}) => 
-      <TouchableWithoutFeedback onPress={ () => navigation.navigate('spraying')}>
+      <TouchableWithoutFeedback onPress={ () => navigation.navigate('spraying',{
+        key: item.key
+      })}>
       <View style={styles.item}>
         <Text style={{fontSize: 24}}>
           {item.name}
@@ -77,10 +84,27 @@ const List = ({ navigation }) => {
       </View>
       </TouchableWithoutFeedback>}
     />}
+    <IconButton style={{
+      position:'absolute',
+      alignSelf:'flex-end',
+      bottom:120,
+      right:20,
+      borderRadius:30,
+      backgroundColor:'#1BCA50',
+      padding:28,shadowColor: "#000",
+      shadowOffset: {
+        width: 0,
+        height: 2
+      }
+    }} 
+    onPress={() => navigation.navigate('spraying') } 
+    icon={(props) => <Icon 
+    name='plus' 
+    size={30} color='white'/>}></IconButton>
   </View>);
 };
 
-const SettingScreen = () => {
+const SettingScreen = ({ navigation }) => {
   return (
     <Stack.Navigator
       initialRouteName="Home"

@@ -35,7 +35,7 @@ const ModalPicker = ({setChange, value, setModalVisible, modalVisible }) => {
                 setChange(data + ':' + value.substring(3,value.length))
               }}    
               dataSource={hours}
-              selectedIndex={0}
+              selectedIndex={parseInt(value.substring(0,3))}
               wrapperHeight={180}
               wrapperColor='#FFFFFF'
               itemHeight={60}
@@ -47,7 +47,7 @@ const ModalPicker = ({setChange, value, setModalVisible, modalVisible }) => {
                 setChange(value.substring(0,3)+ data + value.substring(5,value.length))
               }}
               dataSource={minutes}
-              selectedIndex={0}
+              selectedIndex={parseInt(value.substring(3,5))}
               wrapperHeight={180}
               wrapperColor='#FFFFFF'
               itemHeight={60}
@@ -59,7 +59,7 @@ const ModalPicker = ({setChange, value, setModalVisible, modalVisible }) => {
                 setChange(value.substring(0,value.length-2)+ data)
               }}
               dataSource={seconds}
-              selectedIndex={0}
+              selectedIndex={parseInt(value.substring(6,value.length))}
               wrapperColor='#FFFFFF'
               wrapperHeight={180}
               itemHeight={60}
@@ -84,7 +84,6 @@ const SetUpModal = ({ value, navigation, setModalVisible, modalVisible }) => {
       await AsyncStorage.setItem(currentdate.toString(), jsonValue);
     } catch(e) {
       // save error
-      console.log(e);
     }
   }
 
@@ -164,12 +163,35 @@ const SetUpModal = ({ value, navigation, setModalVisible, modalVisible }) => {
   );
 };
 
-const SprayingScreen = ({ navigation }) => {  
+const SprayingScreen = ({ route,navigation }) => {
+  const { key } = route.params != null ? route.params : {key: null};
   const [modalSprayingVisible,setModalSprayingVisible] = useState(false);
   const [modalDistanceVisible,setmodalDistanceVisible] = useState(false);
   const [modalSetupVisible, setModalSetupVisible] = useState(false);
   const [SprayingText,setSprayingText] = useState('00:00:00');
   const [DistanceText,setDistanceText] = useState('00:00:00');
+ 
+
+  const getItemObject = async (keyObject) => {
+    try {
+      const jsonValue = await AsyncStorage.getItem(keyObject);
+      return jsonValue != null ? JSON.parse(jsonValue) : null;
+    } catch(e) {
+      // read error
+    }
+  };
+
+  useEffect(() => {
+    const loadSpraying = async () => {
+      let spraying = key != null ? await getItemObject(key) : null;
+      let SprayingTime = spraying != null ? spraying.sprayingTime : '00:00:00';
+      let DistanceTime = spraying != null ? spraying.distanceTime : '00:00:00';
+      setSprayingText(SprayingTime);
+      setDistanceText(DistanceTime);
+    }
+    loadSpraying();
+  });
+
     return (
       <View style={styles.centeredView}>
         <ModalPicker modalVisible={modalSprayingVisible} setModalVisible={setModalSprayingVisible} setChange={setSprayingText} value={SprayingText}/>
