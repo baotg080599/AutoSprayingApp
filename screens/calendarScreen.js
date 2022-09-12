@@ -1,36 +1,94 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, View, Text, Button, Platform } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, View, Text, Button, Platformm, Modal } from 'react-native';
 import {Agenda, Calendar, LocaleConfig} from 'react-native-calendars';
+import { IconButton } from "@react-native-material/core";
+import Icon from "@expo/vector-icons/MaterialCommunityIcons";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const ModalSetUpCalendar = ({ value, navigation, setModalVisible, modalVisible }) => {
+  return(
+    <Modal
+    animationType="slide"
+    transparent={true}
+    visible={modalVisible}
+    onRequestClose={() => {
+      setModalVisible(!modalVisible);
+    }}
+    >
+      <View style={{
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: 'rgba(52, 52, 52, 0.8)'
+      }}>
+        <View>
+
+        </View>
+      </View>
+    </Modal>
+  );
+}
 
 const CalendarScreen = () => {
+  const [modalSetUpCalendarVisible,setModalSetUpCalendarVisible] = useState(false);
+  const [timeValue,setTimeValue] = useState('');
+  const [markDateList,setMarkDateList] = useState({});
+
   var currentdate = new Date();
 
+  const getItemObject = async (keyObject) => {
+    try {
+      const jsonValue = await AsyncStorage.getItem(keyObject);
+      return jsonValue != null ? JSON.parse(jsonValue) : null;
+    } catch(e) {
+      // read error
+    }
+  };
+
+  const getAllKeys = async () => {
+    let list = [];
+    let keys = [];
+    try {
+      keys = await AsyncStorage.getAllKeys();
+      keys.forEach(async element => {
+        let item = await getItemObject(element);
+        list.push({...item,key: element});
+        setListSpraying(list);
+      });
+    } catch(e) {
+      // read key error
+    }
+  };
+
   return(
+    <View>
+      <ModalSetUpCalendar value={timeValue} setModalVisible={setModalSetUpCalendarVisible} modalVisible={modalSetUpCalendarVisible}/>
       <Calendar
-  minDate={'2012-05-10'}
-  // Maximum date that can be selected, dates after maxDate will be grayed out. Default = undefined
-  maxDate={'2012-05-30'}
-  // Handler which gets executed on day press. Default = undefined
-  onDayPress={day => {
-    console.log('selected day', day);
-  }}
-  // Month format in calendar title. Formatting values: http://arshaw.com/xdate/#Formatting
-  monthFormat={'yyyy MM'}
-  // Handler which gets executed when visible month changes in calendar. Default = undefined
-  onMonthChange={month => {
-    console.log('month changed', month);
-  }}
-  // Hide month navigation arrows. Default = false
-  hideArrows={true}
-  // Do not show days of other months in month page. Default = false
-  hideExtraDays={true}
-  // If hideArrows=false and hideExtraDays=false do not swich month when tapping on greyed out
-  // day from another month that is visible in calendar page. Default = false
-  disableMonthChange={true}
-  // If firstDay=1 week starts from Monday. Note that dayNames and dayNamesShort should still start from Sunday.
-  firstDay={1}
-/>
-);
+        markedDates = {
+          markDateList
+        }
+        minDate={currentdate.getFullYear()+'-'+(currentdate.getMonth()+1).toString().padStart(2, '0')+'-'+currentdate.getDate().toString().padStart(2, '0')}
+        onDayPress={day => {
+          setTimeValue(day);
+          setModalSetUpCalendarVisible(true);
+        }}
+        onDayLongPress={day => {
+          console.log('selected day', day);
+        }}
+        monthFormat={'MM-yyyy'}
+        onMonthChange={month => {
+          console.log('month changed', month);
+        }}
+        disableMonthChange={true}
+        hideExtraDays={true}
+        firstDay={1}
+        onPressArrowLeft={subtractMonth => subtractMonth()}
+        onPressArrowRight={addMonth => addMonth()}
+        disableAllTouchEventsForDisabledDays={true}
+        enableSwipeMonths={true}
+      />
+    </View>
+  );
 };
 
 export default CalendarScreen;

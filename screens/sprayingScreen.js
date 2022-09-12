@@ -152,7 +152,7 @@ const SetUpModal = ({ value, navigation, setModalVisible, modalVisible }) => {
               cycle: cycleValue
             });
             setModalVisible(!modalVisible);
-            navigation.navigate('Settings');
+            navigation.navigate('Settings',{ rerenderParam: 0 });
           }}
         >
           <Text style={{...styles.textStyle,fontSize:22}}>Finish</Text>
@@ -171,23 +171,29 @@ const SprayingScreen = ({ route,navigation }) => {
   const [SprayingText,setSprayingText] = useState('00:00:00');
   const [DistanceText,setDistanceText] = useState('00:00:00');
  
-
   const getItemObject = async (keyObject) => {
     try {
       const jsonValue = await AsyncStorage.getItem(keyObject);
       return jsonValue != null ? JSON.parse(jsonValue) : null;
     } catch(e) {
+      console.log(e);
       // read error
     }
   };
 
   useEffect(() => {
     const loadSpraying = async () => {
-      let spraying = key != null ? await getItemObject(key) : null;
-      let SprayingTime = spraying != null ? spraying.sprayingTime : '00:00:00';
-      let DistanceTime = spraying != null ? spraying.distanceTime : '00:00:00';
-      setSprayingText(SprayingTime);
-      setDistanceText(DistanceTime);
+      try{
+        let spraying = key != null ? await getItemObject(key) : null;
+        if(spraying != null){
+          let SprayingTime = spraying != null ? spraying.sprayingTime : '00:00:00';
+          let DistanceTime = spraying != null ? spraying.distanceTime : '00:00:00';
+          setSprayingText(SprayingTime);
+          setDistanceText(DistanceTime);
+        }
+      }catch(e){
+        console.log(e);
+      }
     }
     loadSpraying();
   });

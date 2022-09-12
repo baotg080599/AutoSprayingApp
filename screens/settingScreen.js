@@ -24,8 +24,9 @@ const styles = StyleSheet.create({
   },
 });
 
-const List = ({ navigation }) => {
+const List = ({ navigation, route }) => {
 
+  const { rerenderParam } = route.params != null ? route.params : {rerenderParam: null};
   const [listSpraying,setListSpraying] = useState([]);
 
   const getItemObject = async (keyObject) => {
@@ -65,6 +66,9 @@ const List = ({ navigation }) => {
         />
       )
     });
+    if(rerenderParam != null){
+      load();
+    }
   }, [navigation]);
   
   return(
@@ -73,7 +77,8 @@ const List = ({ navigation }) => {
     {listSpraying.length > 0 &&
     <FlatList
       data={listSpraying}
-      renderItem={({item}) => 
+      renderItem={({item}) =>
+      <Swipeable>
       <TouchableWithoutFeedback onPress={ () => navigation.navigate('spraying',{
         key: item.key
       })}>
@@ -82,7 +87,7 @@ const List = ({ navigation }) => {
           {item.name}
         </Text>
       </View>
-      </TouchableWithoutFeedback>}
+      </TouchableWithoutFeedback></Swipeable> }
     />}
     <IconButton style={{
       position:'absolute',
