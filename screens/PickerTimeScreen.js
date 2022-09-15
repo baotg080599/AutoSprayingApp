@@ -3,6 +3,10 @@ import { Modal, StyleSheet, Text, Pressable, View, TextInput } from "react-nativ
 import ScrollPicker from 'react-native-wheel-scrollview-picker';
 import { HStack, VStack } from '@react-native-material/core';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { IconButton } from "@react-native-material/core";
+import { getDatabase, ref, onValue, set, get } from 'firebase/database';
+import myApp from '../firebase';
 
 const ModalPicker = ({ setChange, value, setModalVisible, modalVisible }) => {
 
@@ -72,168 +76,135 @@ const ModalPicker = ({ setChange, value, setModalVisible, modalVisible }) => {
   );
 }
 
-const SetUpModal = ({ value, navigation, setModalVisible, modalVisible }) => {
-  const [nameValue, setNameValue] = useState('');
-  const [cycleValue, setCycleValue] = useState(0);
+const ModalPickerMethod = ({ setChange, value, setModalVisible, modalVisible }) => {
 
-  var currentdate = new Date(); 
+  const [listSpraying,setListSpraying] = useState([]);
 
-  const setSpraying = async (value) => {
-    try {
-      const jsonValue = JSON.stringify(value);
-      await AsyncStorage.setItem(currentdate.toString(), jsonValue);
-    } catch(e) {
-      // save error
-    }
-  }
-
-  return(
-    <Modal
-    animationType="slide"
-    transparent={true}
-    visible={modalVisible}
-    onRequestClose={() => {
-      setModalVisible(!modalVisible);
-    }}
-  >
-    <View style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: 'rgba(52, 52, 52, 0.8)'
-      }}>
-      <View style={{
-          alignItems: "center",
-          flexDirection: 'column',
-          backgroundColor: "white",
-          borderRadius: 25,
-          padding:'10%',
-          shadowColor: "#000",
-          shadowOffset: {
-            width: 0,
-            height: 2
-          },
-          shadowOpacity: 0.25,
-          shadowRadius: 4,
-          elevation: 5
-      }}>
-        
-      <TextInput
-        style={{
-          height: 40,
-          width: 280,
-          margin: 12,
-          borderBottomWidth: 1,
-          padding: 5
-        }}
-        onChangeText={newText => setNameValue(newText)}
-        defaultValue={nameValue}
-        placeholder="name"
-      />
-      <TextInput
-        style={{height: 40,
-          width: 280,
-          margin: 12,
-          borderBottomWidth: 1,
-          padding: 5,}}
-        onChangeText={newText => setCycleValue(newText)}
-        defaultValue={cycleValue}
-        placeholder="cycle"
-        keyboardType="numeric"
-      />
-      {<Text></Text>}
-      <Pressable
-          style={{...styles.button, borderRadius:12,...styles.buttonOpen, alignSelf:'flex-end'}}
-          onPress={() => {
-            setSpraying({
-              name: nameValue,
-              sprayingTime: value.spraying,
-              distanceTime: value.distance,
-              cycle: cycleValue
-            });
-            setModalVisible(!modalVisible);
-            navigation.navigate('Settings',{ rerenderParam: 0 });
-          }}
-        >
-          <Text style={{...styles.textStyle,fontSize:22}}>Finish</Text>
-        </Pressable>
-      </View>
-    </View>
-  </Modal>
-  );
-};
-
-const SprayingScreen = ({ route,navigation }) => {
-  const { key } = route.params != null ? route.params : {key: null};
-  const [modalSprayingVisible,setModalSprayingVisible] = useState(false);
-  const [modalDistanceVisible,setmodalDistanceVisible] = useState(false);
-  const [modalSetupVisible, setModalSetupVisible] = useState(false);
-  const [SprayingText,setSprayingText] = useState('00:00:00');
-  const [DistanceText,setDistanceText] = useState('00:00:00');
- 
   const getItemObject = async (keyObject) => {
     try {
       const jsonValue = await AsyncStorage.getItem(keyObject);
       return jsonValue != null ? JSON.parse(jsonValue) : null;
     } catch(e) {
-      console.log(e);
       // read error
     }
   };
 
   useEffect(() => {
-    const loadSpraying = async () => {
-      try{
-        let spraying = key != null ? await getItemObject(key) : null;
-        if(spraying != null){
-          let SprayingTime = spraying != null ? spraying.sprayingTime : '00:00:00';
-          let DistanceTime = spraying != null ? spraying.distanceTime : '00:00:00';
-          setSprayingText(SprayingTime);
-          setDistanceText(DistanceTime);
-        }
-      }catch(e){
-        console.log(e);
-      }
+    const loadSprayingWay = async () => {
+      await getAllKeys();
     }
-    loadSpraying();
-  });
+    loadSprayingWay();
+  },[]);
+
+  const getAllKeys = async () => {
+    let list = [];
+    let keys = [];
+    try {
+      keys = await AsyncStorage.getAllKeys();
+      list = await Promise.all(keys.map(async value=>{
+        return await getItemObject(value)
+      }));
+      setListSpraying(state => [...list]);
+    } catch(e) {
+      // read key error
+    }
+  };
+
+  return(
+    <Modal
+          animationType="slide"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => {
+            setModalVisible(!modalVisible);
+          }}
+        >
+          <View style={styles.centeredViewModal}>
+            <View style={styles.modalView}>
+            <ScrollPicker 
+              renderItem={(data,index) => {
+                return (<Text>{data.name}</Text>)
+              }}
+              onValueChange={(data, selectedIndex) => {
+                setChange(state => data.name);
+              }}
+              dataSource={listSpraying}
+              selectedIndex={0}
+              wrapperHeight={180}
+              wrapperColor='#FFFFFF'
+              itemHeight={60}
+              highlightColor='#d8d8d8'
+              highlightBorderWidth={2}/>
+            </View>
+          </View>
+        </Modal>
+  );
+}
+
+const PickerTimeScreen = ({ route, navigation }) => {
+  const { dateString } = route.params != null ? route.params : {dateString: null};
+  const [modalSelectTimeVisible,setModalSelectTimeVisible] = useState(false);
+  const [modalSprayingMethod,setModalSprayingMethod] = useState(false);
+  const [SelectTimeText,setSelectTimeText] = useState('00:00:00');
+  const [sprayingMethod,setPrayingMethod] = useState('None');
+
+  const setData = (key, value) => {
+    const db = getDatabase(myApp);
+    const reference = ref(db, '/calendarSpraying/'+key+'/'+value+'/');
+    set(reference, 0);
+  }
+ 
+  const initSpraying = () => {
+
+  }
+
+  const getItemObject = async (keyObject) => {
+    try {
+      const jsonValue = await AsyncStorage.getItem(keyObject);
+      return jsonValue != null ? JSON.parse(jsonValue) : null;
+    } catch(e) {
+      // read error
+    }
+  };
 
     return (
       <View style={styles.centeredView}>
-        <ModalPicker modalVisible={modalSprayingVisible} setModalVisible={setModalSprayingVisible} setChange={setSprayingText} value={SprayingText}/>
-        <ModalPicker modalVisible={modalDistanceVisible} setModalVisible={setmodalDistanceVisible} setChange={setDistanceText} value={DistanceText}/>
-        <SetUpModal value={{spraying:SprayingText,distance:DistanceText}} modalVisible={modalSetupVisible} setModalVisible={setModalSetupVisible} navigation={navigation}/>
+        <ModalPicker modalVisible={modalSelectTimeVisible} setModalVisible={setModalSelectTimeVisible} setChange={setSelectTimeText} value={SelectTimeText}/>
+        <ModalPickerMethod value={sprayingMethod} modalVisible={modalSprayingMethod} setModalVisible={setModalSprayingMethod} setChange={setPrayingMethod}/>
         <VStack spacing={'20%'}>
         <HStack spacing={'5%'} style={{
           justifyContent: 'center',
           alignItems: 'center'
         }}>
-          <Text style={{ fontWeight: "bold", fontSize:28 }}>Spraying:</Text>
+          <Text style={{ fontWeight: "bold", fontSize:28 }}>Time:</Text>
         <Pressable
           style={[styles.button, styles.buttonOpen]}
-          onPress={() => setModalSprayingVisible(true)}
+          onPress={() => setModalSelectTimeVisible(true)}
         >
-          <Text style={{...styles.textStyle,fontSize:50}}>{SprayingText}</Text>
+          <Text style={{...styles.textStyle,fontSize:50}}>{SelectTimeText}</Text>
         </Pressable>
         </HStack>
         <HStack spacing={'5%'} style={{
           justifyContent: 'center',
           alignItems: 'center'
         }}>
-          <Text style={{ fontWeight: "bold", fontSize:28 }}>Distance:</Text>
+          <Text style={{ fontWeight: "bold", fontSize:28 }}>Spraying Method:</Text>
         <Pressable
           style={[styles.button, styles.buttonOpen]}
-          onPress={() => setmodalDistanceVisible(true)}
+          onPress={() => setModalSprayingMethod(true)}
         >
-          <Text style={{...styles.textStyle,fontSize:50}}>{DistanceText}</Text>
+          <Text style={{...styles.textStyle,fontSize:50}}>{sprayingMethod}</Text>
         </Pressable>
         </HStack>
         <HStack justify='center'>
         <Pressable
           style={{...styles.button, borderRadius:12,...styles.buttonOpen}}
-          onPress={() => setModalSetupVisible(true)}
+          onPress={() => {
+            setData(dateString,SelectTimeText);
+            navigation.navigate('timeListScreen');
+          }}
         >
-          <Text style={{...styles.textStyle,fontSize:32}}>Next</Text>
+          <Text style={{...styles.textStyle,fontSize:32}}>Finish</Text>
         </Pressable>
         </HStack>
         </VStack>
@@ -288,4 +259,4 @@ const styles = StyleSheet.create({
   }
 });
 
-export default SprayingScreen;
+export default PickerTimeScreen;

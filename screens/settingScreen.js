@@ -1,4 +1,4 @@
-import React, { useState} from 'react';
+import React, { useState, useRef } from 'react';
 import { IconButton } from "@react-native-material/core";
 import { createStackNavigator } from '@react-navigation/stack';
 import { FlatList, StyleSheet, Text, View, TouchableWithoutFeedback  } from 'react-native';
@@ -43,11 +43,10 @@ const List = ({ navigation, route }) => {
     let keys = [];
     try {
       keys = await AsyncStorage.getAllKeys();
-      keys.forEach(async element => {
-        let item = await getItemObject(element);
-        list.push({...item,key: element});
-        setListSpraying(list);
-      });
+      list = await Promise.all(keys.map(async value=>{
+        return await getItemObject(value)
+      }));
+      setListSpraying(state => [...list]);
     } catch(e) {
       // read key error
     }
@@ -66,9 +65,6 @@ const List = ({ navigation, route }) => {
         />
       )
     });
-    if(rerenderParam != null){
-      load();
-    }
   }, [navigation]);
   
   return(
@@ -102,7 +98,9 @@ const List = ({ navigation, route }) => {
         height: 2
       }
     }} 
-    onPress={() => navigation.navigate('spraying') } 
+    onPress={() => navigation.navigate('spraying',{
+      reloadScreen: getAllKeys
+    }) } 
     icon={(props) => <Icon 
     name='plus' 
     size={30} color='white'/>}></IconButton>

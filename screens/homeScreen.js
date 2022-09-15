@@ -6,7 +6,7 @@ import { Text,View,ScrollView } from 'react-native';
 
 const HomeScreen = () => {
   return (
-          <DeviceList/>
+    <DeviceList/>
   );
 };
 

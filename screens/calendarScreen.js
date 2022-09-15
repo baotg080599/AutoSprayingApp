@@ -1,39 +1,60 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, Text, Button, Platformm, Modal } from 'react-native';
-import {Agenda, Calendar, LocaleConfig} from 'react-native-calendars';
-import { IconButton } from "@react-native-material/core";
-import Icon from "@expo/vector-icons/MaterialCommunityIcons";
+import { StyleSheet, View, Text, Button, TouchableWithoutFeedback, Modal } from 'react-native';
+import { Calendar, LocaleConfig} from 'react-native-calendars';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import myApp from '../firebase';
+import { getDatabase, ref, onValue, set, get } from 'firebase/database';
+import { createStackNavigator } from '@react-navigation/stack';
+import PickerTimeScreen from './PickerTimeScreen';
+import TimeListScreen from './timeListScreen';
 
-const ModalSetUpCalendar = ({ value, navigation, setModalVisible, modalVisible }) => {
-  return(
-    <Modal
-    animationType="slide"
-    transparent={true}
-    visible={modalVisible}
-    onRequestClose={() => {
-      setModalVisible(!modalVisible);
-    }}
-    >
-      <View style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: 'rgba(52, 52, 52, 0.8)'
-      }}>
-        <View>
+const Stack = createStackNavigator();
 
-        </View>
-      </View>
-    </Modal>
-  );
-}
+const styles = StyleSheet.create({
+  container: {
+   paddingTop: 22
+  },
+  item: {
+    backgroundColor: 'white',
+    padding: 20,
+    marginVertical: 8,
+    marginHorizontal: 16,
+  },
+});
 
-const CalendarScreen = () => {
-  const [modalSetUpCalendarVisible,setModalSetUpCalendarVisible] = useState(false);
+const CalendarComponent = ({ navigation }) => {
   const [timeValue,setTimeValue] = useState('');
   const [markDateList,setMarkDateList] = useState({});
+ 
+  const getAllData = async () => {
+    const db = getDatabase(myApp);
+    const reference = ref(db, '/calendarSpraying');
+    const dateList = (await get(reference)).toJSON();
+    Object.keys(dateList).forEach(key => dateList[key] = {selected: true, selectedColor: 'blue'});
+    setMarkDateList(state => dateList);
+  }
 
+  const listenValue = async () => {
+    const db = getDatabase();
+    const reference = ref(db, '/');
+    onValue(reference,(snapshot) => {
+      let listSprayingTimeDate = snapshot.val().calendarSpraying;
+      console.log(listSprayingTimeDate);
+    });
+  }
+
+  const setData = async (key,value) => {
+    const db = getDatabase(myApp);
+    const reference = ref(db,'/' + key);
+    set(reference,value);
+  }
+
+  useEffect(() => {
+    const loadAllDate = async () => {
+      await getAllData();
+    }
+    loadAllDate();
+  });
   var currentdate = new Date();
 
   const getItemObject = async (keyObject) => {
@@ -61,16 +82,13 @@ const CalendarScreen = () => {
   };
 
   return(
-    <View>
-      <ModalSetUpCalendar value={timeValue} setModalVisible={setModalSetUpCalendarVisible} modalVisible={modalSetUpCalendarVisible}/>
       <Calendar
         markedDates = {
           markDateList
         }
         minDate={currentdate.getFullYear()+'-'+(currentdate.getMonth()+1).toString().padStart(2, '0')+'-'+currentdate.getDate().toString().padStart(2, '0')}
         onDayPress={day => {
-          setTimeValue(day);
-          setModalSetUpCalendarVisible(true);
+          navigation.navigate('timeListScreen',{dateString:day.dateString});
         }}
         onDayLongPress={day => {
           console.log('selected day', day);
@@ -87,7 +105,32 @@ const CalendarScreen = () => {
         disableAllTouchEventsForDisabledDays={true}
         enableSwipeMonths={true}
       />
-    </View>
+  );
+};
+
+const CalendarScreen = () => {
+  return(
+    <Stack.Navigator
+      initialRouteName="Home"
+      screenOptions={{
+        headerShown: false
+      }}
+    >
+      <Stack.Screen
+        name="calendar"
+        component={CalendarComponent}
+      />
+
+      <Stack.Screen
+        name="setupTime"
+        component={PickerTimeScreen}
+      />
+
+      <Stack.Screen
+      name="timeListScreen"
+      component={TimeListScreen}
+      />
+    </Stack.Navigator>
   );
 };
 
