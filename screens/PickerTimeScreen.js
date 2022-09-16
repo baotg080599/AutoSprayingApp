@@ -5,6 +5,7 @@ import { HStack, VStack } from '@react-native-material/core';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { IconButton } from "@react-native-material/core";
+import dayjs from 'dayjs';
 import { getDatabase, ref, onValue, set, get } from 'firebase/database';
 import myApp from '../firebase';
 
@@ -78,7 +79,7 @@ const ModalPicker = ({ setChange, value, setModalVisible, modalVisible }) => {
 
 const ModalPickerMethod = ({ setChange, value, setModalVisible, modalVisible }) => {
 
-  const [listSpraying,setListSpraying] = useState([]);
+  const [listSpraying,setListSpraying] = useState([{name:'None'}]);
 
   const getItemObject = async (keyObject) => {
     try {
@@ -102,7 +103,8 @@ const ModalPickerMethod = ({ setChange, value, setModalVisible, modalVisible }) 
     try {
       keys = await AsyncStorage.getAllKeys();
       list = await Promise.all(keys.map(async value=>{
-        return await getItemObject(value)
+        const item = await getItemObject(value);
+        return{...item,key: value};
       }));
       setListSpraying(state => [...list]);
     } catch(e) {
@@ -126,7 +128,7 @@ const ModalPickerMethod = ({ setChange, value, setModalVisible, modalVisible }) 
                 return (<Text>{data.name}</Text>)
               }}
               onValueChange={(data, selectedIndex) => {
-                setChange(state => data.name);
+                setChange(state => data);
               }}
               dataSource={listSpraying}
               selectedIndex={0}
@@ -146,16 +148,50 @@ const PickerTimeScreen = ({ route, navigation }) => {
   const [modalSelectTimeVisible,setModalSelectTimeVisible] = useState(false);
   const [modalSprayingMethod,setModalSprayingMethod] = useState(false);
   const [SelectTimeText,setSelectTimeText] = useState('00:00:00');
-  const [sprayingMethod,setPrayingMethod] = useState('None');
+  const [sprayingMethod,setPrayingMethod] = useState({name: 'None'});
+  const [everyDayValue,setEveryDayValue] = useState(false);
+  const [everyWeekValue,setEveryWeekValue] = useState(false);
+  const [channel1Value, setChannel1Value] = useState(true);
+  const [channel2Value, setChannel2Value] = useState(false);
 
-  const setData = (key, value) => {
+  const setData = (key, value, status) => {
     const db = getDatabase(myApp);
     const reference = ref(db, '/calendarSpraying/'+key+'/'+value+'/');
-    set(reference, 0);
+    set(reference, status);
+  }
+
+  const timeToSecond = (time) => {
+    return (parseInt(time.split(':')[0]) * 60 * 60)+ (parseInt(time.split(':')[1])*60) + parseInt(time.split(':')[2]);
+  }
+
+  const timeToDate = (time) => {
+    return time.get('year')+'-'+(time.get('month')+1).toString().padStart(2,'0')+'-'+time.get('date').toString().padStart(2,'0');
+  }
+
+  const timeToTime = (time) => {
+    return time.get('hour').toString().padStart(2,'0')+':'+time.get('minute').toString().padStart(2,'0')+':'+time.get('second').toString().padStart(2,'0');
+  }
+
+  const setEveryDay = (cycle,dateString,timeStart,sprayingSecond,distanceSecond) => {
+    let Time = dayjs(dateString+'T'+timeStart).locale('vi');
+    setData(dateString+'/timeList',timeStart,'channel1');
+    for(let i = 1;i <= cycle;i++){
+      setData(timeToDate(Time),timeToTime(Time),1);
+      Time = Time.add(sprayingSecond,'second');
+      setData(timeToDate(Time),timeToTime(Time),0);
+      Time = Time.add(distanceSecond,'second');
+    }
   }
  
-  const initSpraying = () => {
-
+  const initSpraying = (sprayingMethod, timeStart, dateString,everyDay=1,everyWeek=1) => {
+    const {cycle, distanceTime, name, sprayingTime, key} = sprayingMethod;
+    const sprayingSecond = timeToSecond(sprayingTime);
+    const distanceSecond = timeToSecond(distanceTime);
+    let date = dayjs(dateString);
+    for(let i = 1;i <= everyDay;i++){
+      setEveryDay(cycle,timeToDate(date),timeStart,sprayingSecond,distanceSecond);
+      date = date.add(everyWeek,'day');
+    }
   }
 
   const getItemObject = async (keyObject) => {
@@ -188,20 +224,96 @@ const PickerTimeScreen = ({ route, navigation }) => {
           justifyContent: 'center',
           alignItems: 'center'
         }}>
-          <Text style={{ fontWeight: "bold", fontSize:28 }}>Spraying Method:</Text>
+          <Text style={{ fontWeight: "bold", fontSize:25 }}>Spraying:</Text>
         <Pressable
           style={[styles.button, styles.buttonOpen]}
           onPress={() => setModalSprayingMethod(true)}
         >
-          <Text style={{...styles.textStyle,fontSize:50}}>{sprayingMethod}</Text>
+          <Text style={{...styles.textStyle,fontSize:40}}>{sprayingMethod.name}</Text>
         </Pressable>
         </HStack>
+
+        <HStack spacing={'5%'} style={{
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+
+        <HStack spacing={'5%'} style={{
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <Text style={{ fontWeight: "bold", fontSize:20 }}>everyDay:</Text>
+        <Pressable
+          style={[styles.button, {backgroundColor:'white'}]}
+          onPress={() => {
+            setEveryDayValue(!everyDayValue);
+            setEveryWeekValue(false);
+          }}
+        >
+        <Ionicons name={everyDayValue?'checkmark-circle':'checkmark-circle-outline'} size={30} color="#2196F3"/>
+        </Pressable>
+        </HStack>
+
+        <HStack spacing={'5%'} style={{
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <Text style={{ fontWeight: "bold", fontSize:20 }}>everyWeek:</Text>
+        <Pressable
+          style={[styles.button, {backgroundColor:'white'}]}
+          onPress={() => {
+            setEveryWeekValue(!everyWeekValue);
+            setEveryDayValue(false);
+          }}
+        >
+        <Ionicons name={everyWeekValue?'checkmark-circle':'checkmark-circle-outline'} size={30} color="#2196F3"/>
+        </Pressable>
+        </HStack>
+        </HStack>
+
+        <HStack spacing={'5%'} style={{
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+
+        <HStack spacing={'5%'} style={{
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <Text style={{ fontWeight: "bold", fontSize:20 }}>channel 1:</Text>
+        <Pressable
+          style={[styles.button, {backgroundColor:'white'}]}
+          onPress={() => {
+            setChannel1Value(!channel1Value);
+          }}
+        >
+        <Ionicons name={channel1Value?'checkmark-circle':'checkmark-circle-outline'} size={30} color="#2196F3"/>
+        </Pressable>
+        </HStack>
+
+        <HStack spacing={'5%'} style={{
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <Text style={{ fontWeight: "bold", fontSize:20 }}>channel 2:</Text>
+        <Pressable
+          style={[styles.button, {backgroundColor:'white'}]}
+          onPress={() => {
+            setChannel2Value(!channel2Value);
+          }}
+        >
+        <Ionicons name={channel2Value?'checkmark-circle':'checkmark-circle-outline'} size={30} color="#2196F3"/>
+        </Pressable>
+        </HStack>
+
+        </HStack>
+
         <HStack justify='center'>
         <Pressable
           style={{...styles.button, borderRadius:12,...styles.buttonOpen}}
           onPress={() => {
-            setData(dateString,SelectTimeText);
-            navigation.navigate('timeListScreen');
+            initSpraying(sprayingMethod,SelectTimeText,dateString,everyDayValue?30:everyWeekValue?30:1,everyWeekValue?7:1);
+            navigation.navigate('timeListScreen',{dateString: dateString});
           }}
         >
           <Text style={{...styles.textStyle,fontSize:32}}>Finish</Text>

@@ -4,7 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { FlatList, StyleSheet, Text, View, TouchableWithoutFeedback  } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from "@expo/vector-icons/MaterialCommunityIcons";
-import Swipeable from 'react-native-gesture-handler/Swipeable';
+import { HStack, VStack } from '@react-native-material/core';
 
 import SprayingScreen from './sprayingScreen';
 
@@ -25,8 +25,6 @@ const styles = StyleSheet.create({
 });
 
 const List = ({ navigation, route }) => {
-
-  const { rerenderParam } = route.params != null ? route.params : {rerenderParam: null};
   const [listSpraying,setListSpraying] = useState([]);
 
   const getItemObject = async (keyObject) => {
@@ -44,13 +42,23 @@ const List = ({ navigation, route }) => {
     try {
       keys = await AsyncStorage.getAllKeys();
       list = await Promise.all(keys.map(async value=>{
-        return await getItemObject(value)
+        return ({...await getItemObject(value),key: value})
       }));
       setListSpraying(state => [...list]);
     } catch(e) {
       // read key error
     }
   };
+
+  const removeItem = async (key) => {
+    try {
+      await AsyncStorage.removeItem(key);
+      return true;
+    }
+    catch(exception) {
+        return false;
+    }
+  }
 
   React.useEffect(() => {
     const load = async () =>{
@@ -74,16 +82,25 @@ const List = ({ navigation, route }) => {
     <FlatList
       data={listSpraying}
       renderItem={({item}) =>
-      <Swipeable>
-      <TouchableWithoutFeedback onPress={ () => navigation.navigate('spraying',{
+      <TouchableWithoutFeedback onPress={ () => {
+        navigation.navigate('spraying',{
         key: item.key
-      })}>
+      })}}>
       <View style={styles.item}>
-        <Text style={{fontSize: 24}}>
+        <Text style={{fontSize: 24, color:'#ffffff'}}>
           {item.name}
         </Text>
+        <IconButton
+        style={{alignSelf:'flex-end',marginTop:-40}}
+          onPress={async () => {
+            removeItem(item.key);
+            getAllKeys();
+          }}
+          icon={(props) => <Icon name='delete' size={30} color='#ffffff'/>}
+        />
       </View>
-      </TouchableWithoutFeedback></Swipeable> }
+      </TouchableWithoutFeedback>
+      }
     />}
     <IconButton style={{
       position:'absolute',
@@ -98,9 +115,7 @@ const List = ({ navigation, route }) => {
         height: 2
       }
     }} 
-    onPress={() => navigation.navigate('spraying',{
-      reloadScreen: getAllKeys
-    }) } 
+    onPress={() => navigation.navigate('spraying') } 
     icon={(props) => <Icon 
     name='plus' 
     size={30} color='white'/>}></IconButton>

@@ -72,7 +72,7 @@ const ModalPicker = ({ setChange, value, setModalVisible, modalVisible }) => {
   );
 }
 
-const SetUpModal = ({ value, navigation, setModalVisible, modalVisible }) => {
+const SetUpModal = ({ value, navigation, setModalVisible, modalVisible, keyItem }) => {
   const [nameValue, setNameValue] = useState('');
   const [cycleValue, setCycleValue] = useState(0);
 
@@ -81,7 +81,11 @@ const SetUpModal = ({ value, navigation, setModalVisible, modalVisible }) => {
   const setSpraying = async (value) => {
     try {
       const jsonValue = JSON.stringify(value);
-      await AsyncStorage.setItem(currentdate.toString(), jsonValue);
+      if(keyItem!=null){
+        await AsyncStorage.mergeItem(keyItem, jsonValue);
+      }else{
+        await AsyncStorage.setItem(currentdate.toString(), jsonValue);
+      }
     } catch(e) {
       // save error
     }
@@ -170,6 +174,7 @@ const SprayingScreen = ({ route,navigation }) => {
   const [modalSetupVisible, setModalSetupVisible] = useState(false);
   const [SprayingText,setSprayingText] = useState('00:00:00');
   const [DistanceText,setDistanceText] = useState('00:00:00');
+  const[rerender,setRerender] = useState(false);
  
   const getItemObject = async (keyObject) => {
     try {
@@ -190,11 +195,13 @@ const SprayingScreen = ({ route,navigation }) => {
           let DistanceTime = spraying != null ? spraying.distanceTime : '00:00:00';
           setSprayingText(SprayingTime);
           setDistanceText(DistanceTime);
+          setRerender(!rerender);
         }
       }catch(e){
         console.log(e);
       }
     }
+    if(!rerender && key != null)
     loadSpraying();
   });
 
@@ -202,7 +209,7 @@ const SprayingScreen = ({ route,navigation }) => {
       <View style={styles.centeredView}>
         <ModalPicker modalVisible={modalSprayingVisible} setModalVisible={setModalSprayingVisible} setChange={setSprayingText} value={SprayingText}/>
         <ModalPicker modalVisible={modalDistanceVisible} setModalVisible={setmodalDistanceVisible} setChange={setDistanceText} value={DistanceText}/>
-        <SetUpModal value={{spraying:SprayingText,distance:DistanceText}} modalVisible={modalSetupVisible} setModalVisible={setModalSetupVisible} navigation={navigation}/>
+        <SetUpModal value={{spraying:SprayingText,distance:DistanceText}} modalVisible={modalSetupVisible} setModalVisible={setModalSetupVisible} navigation={navigation} keyItem={key}/>
         <VStack spacing={'20%'}>
         <HStack spacing={'5%'} style={{
           justifyContent: 'center',

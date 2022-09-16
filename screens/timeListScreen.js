@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, StyleSheet, Text, Pressable, View, TextInput, FlatList, TouchableWithoutFeedback } from "react-native";
-import ScrollPicker from 'react-native-wheel-scrollview-picker';
+import { StyleSheet, Text, View, FlatList, TouchableWithoutFeedback } from "react-native";
 import { IconButton } from "@react-native-material/core";
 import Icon from "@expo/vector-icons/MaterialCommunityIcons";
-import { getDatabase, ref, onValue, set, get } from 'firebase/database';
+import { getDatabase, ref, get } from 'firebase/database';
 import myApp from '../firebase';
 
 const styles = StyleSheet.create({
@@ -28,11 +27,13 @@ const TimeListScreen = ({ navigation, route }) => {
 
   const getDataDate = async (key) => {
     const db = getDatabase(myApp);
-    const reference = ref(db, '/calendarSpraying/' + key);
-    
-    const child = await get(reference);
-    const data = Object.keys(child.toJSON()).map(x => ({ key: x }));
-    setTimeList(state => [ ...data]);
+    const reference = ref(db, '/calendarSpraying/');
+    const calendarRef = await get(reference);
+    if(calendarRef.hasChild(key)){
+      const child = calendarRef.child(key+'/timeList/');
+      const data = Object.keys(child.toJSON()).map(x => ({ key: x }));
+      setTimeList(state => [ ...data]);
+    }
   }
 
   useEffect(() => {
