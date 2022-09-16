@@ -172,13 +172,13 @@ const PickerTimeScreen = ({ route, navigation }) => {
     return time.get('hour').toString().padStart(2,'0')+':'+time.get('minute').toString().padStart(2,'0')+':'+time.get('second').toString().padStart(2,'0');
   }
 
-  const setEveryDay = (cycle,dateString,timeStart,sprayingSecond,distanceSecond) => {
+  const setEveryDay = (cycle,dateString,timeStart,sprayingSecond,distanceSecond,keyItem) => {
     let Time = dayjs(dateString+'T'+timeStart).locale('vi');
-    setData(dateString+'/timeList',timeStart,'channel1');
+    setData(dateString+'/timeList',timeStart+'/'+(channel1Value?'channel1/':'')+(channel2Value?'channel2/':'')+'key/',keyItem);
     for(let i = 1;i <= cycle;i++){
-      setData(timeToDate(Time),timeToTime(Time),1);
+      setData(timeToDate(Time),timeToTime(Time)+(channel1Value?'/channel1/':'')+(channel2Value?'channel2/':''),1);
       Time = Time.add(sprayingSecond,'second');
-      setData(timeToDate(Time),timeToTime(Time),0);
+      setData(timeToDate(Time),timeToTime(Time)+(channel1Value?'/channel1/':'')+(channel2Value?'channel2/':''),0);
       Time = Time.add(distanceSecond,'second');
     }
   }
@@ -189,7 +189,7 @@ const PickerTimeScreen = ({ route, navigation }) => {
     const distanceSecond = timeToSecond(distanceTime);
     let date = dayjs(dateString);
     for(let i = 1;i <= everyDay;i++){
-      setEveryDay(cycle,timeToDate(date),timeStart,sprayingSecond,distanceSecond);
+      setEveryDay(cycle,timeToDate(date),timeStart,sprayingSecond,distanceSecond,key);
       date = date.add(everyWeek,'day');
     }
   }
